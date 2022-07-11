@@ -49,7 +49,7 @@ class Component(ComponentBase):
 
                 if not (params[KEY_COLUMN_ZIP] in new_columns):
                     logging.error("Column with ZIP codes was not found")
-                    sys.exit(2)
+                    sys.exit(1)
 
                 if params.get(KEY_COLUMN_COUNTY, None) is not None:
                     new_columns.append(params[KEY_COLUMN_COUNTY])
