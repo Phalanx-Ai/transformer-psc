@@ -1,6 +1,5 @@
 '''
-COMPONENT INFO
-
+Use ZIP code (PSČ) to fill district (Okres) and county (Kraj)
 '''
 import csv
 import sys
