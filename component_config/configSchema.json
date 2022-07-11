@@ -1,17 +1,21 @@
 {
   "type": "object",
-  "title": "extractor configuration",
+  "title": "Parameters",
   "required": [
-    "print_hello"
+    "column_psc"
   ],
   "properties": {
-    "print_hello": {
-      "type": "boolean",
-      "title": "Print Hello"
+    "column_psc": {
+      "type": "string",
+      "title": "Name of existing column with ZIP/PSČ"
     },
-    "debug": {
-      "type": "boolean",
-      "title": "Debug"
+    "column_district": {
+      "type": "string",
+      "title": "Name of new column with District"
+    },
+    "column_county": {
+      "type": "string",
+      "title": "Name of new column with County"
     }
   }
 }

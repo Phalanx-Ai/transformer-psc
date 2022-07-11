@@ -1,1 +1,1 @@
-Testing functional sample extractor for purposes of the python component template. 
+Use ZIP code (PSČ) to map addresses in Czech Republic to districts and counties.
