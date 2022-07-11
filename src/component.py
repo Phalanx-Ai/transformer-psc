@@ -62,7 +62,7 @@ class Component(ComponentBase):
                 def _unify_zip_code(zip_code):
                     try:
                         return int(zip_code.replace(" ", ""))
-                    except:
+                    except Exception:
                         return None
 
                 zip_convertor = PscKonvertor()
@@ -76,7 +76,7 @@ class Component(ComponentBase):
                         try:
                             district = zip_convertor.psc2okres(zip_code)
                             county = zip_convertor.psc2kraj(zip_code)
-                        except:
+                        except KeyError:
                             logging.warning("ZIP Code '%s' was not found in database" % (zip_code))
 
                     if params.get(KEY_COLUMN_COUNTY, None) is not None:
@@ -85,6 +85,7 @@ class Component(ComponentBase):
                         row[params[KEY_COLUMN_DISTRICT]] = district
 
                     writer.writerow(row)
+
 
 if __name__ == "__main__":
     try:
