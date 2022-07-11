@@ -1,85 +1,94 @@
 '''
-Template Component main class.
+COMPONENT INFO
 
 '''
 import csv
+import sys
 import logging
-from datetime import datetime
 
 from keboola.component.base import ComponentBase
 from keboola.component.exceptions import UserException
 
-# configuration variables
-KEY_API_TOKEN = '#api_token'
-KEY_PRINT_HELLO = 'print_hello'
+from psc_konvertor import PscKonvertor
 
-# list of mandatory parameters => if some is missing,
-# component will fail with readable message on initialization.
-REQUIRED_PARAMETERS = [KEY_PRINT_HELLO]
+# configuration variables
+KEY_COLUMN_ZIP = 'column_psc'
+KEY_COLUMN_DISTRICT = 'column_district'
+KEY_COLUMN_COUNTY = 'column_county'
+
+REQUIRED_PARAMETERS = [KEY_COLUMN_ZIP]
 REQUIRED_IMAGE_PARS = []
 
 
 class Component(ComponentBase):
-    """
-        Extends base class for general Python components. Initializes the CommonInterface
-        and performs configuration validation.
-
-        For easier debugging the data folder is picked up by default from `../data` path,
-        relative to working directory.
-
-        If `debug` parameter is present in the `config.json`, the default logger is set to verbose DEBUG mode.
-    """
-
     def __init__(self):
         super().__init__()
 
     def run(self):
-        '''
-        Main execution code
-        '''
-
-        # ####### EXAMPLE TO REMOVE
-        # check for missing configuration parameters
         self.validate_configuration_parameters(REQUIRED_PARAMETERS)
         self.validate_image_parameters(REQUIRED_IMAGE_PARS)
         params = self.configuration.parameters
-        # Access parameters in data/config.json
-        if params.get(KEY_PRINT_HELLO):
-            logging.info("Hello World")
 
-        # get last state data/in/state.json from previous run
-        previous_state = self.get_state_file()
-        logging.info(previous_state.get('some_state_parameter'))
+        input_table_defs = self.get_input_tables_definitions()
+        if len(input_table_defs) == 0:
+            logging.error("Table mapping with at least one entry is required")
+            sys.exit(1)
 
-        # Create output table (Tabledefinition - just metadata)
-        table = self.create_out_table_definition('output.csv', incremental=True, primary_key=['timestamp'])
+        for index in range(len(input_table_defs)):
+            SOURCE_FILE_PATH = input_table_defs[index].full_path
+            RESULT_FILENAME = self.configuration.tables_output_mapping[index]['source']
 
-        # get file path of the table (data/out/tables/Features.csv)
-        out_table_path = table.full_path
-        logging.info(out_table_path)
+            out_table = self.create_out_table_definition(RESULT_FILENAME)
+            self.write_manifest(out_table)
 
-        # DO whatever and save into out_table_path
-        with open(table.full_path, mode='wt', encoding='utf-8', newline='') as out_file:
-            writer = csv.DictWriter(out_file, fieldnames=['timestamp'])
-            writer.writeheader()
-            writer.writerow({"timestamp": datetime.now().isoformat()})
+            RESULT_FILE_PATH = out_table.full_path
 
-        # Save table manifest (output.csv.manifest) from the tabledefinition
-        self.write_manifest(table)
+            with open(SOURCE_FILE_PATH, 'rt') as input, open(RESULT_FILE_PATH, 'wt') as out:
+                reader = csv.DictReader(input, dialect='kbc')
+                new_columns = reader.fieldnames
 
-        # Write new state - will be available next run
-        self.write_state_file({"some_state_parameter": "value"})
+                if not (params[KEY_COLUMN_ZIP] in new_columns):
+                    logging.error("Column with ZIP codes was not found")
+                    sys.exit(2)
 
-        # ####### EXAMPLE TO REMOVE END
+                if params.get(KEY_COLUMN_COUNTY, None) is not None:
+                    new_columns.append(params[KEY_COLUMN_COUNTY])
+                if params.get(KEY_COLUMN_DISTRICT, None) is not None:
+                    new_columns.append(params[KEY_COLUMN_DISTRICT])
 
+                writer = csv.DictWriter(out, fieldnames=new_columns, dialect='kbc')
+                writer.writeheader()
 
-"""
-        Main entrypoint
-"""
+                def _unify_zip_code(zip_code):
+                    try:
+                        return int(zip_code.replace(" ", ""))
+                    except:
+                        return None
+
+                zip_convertor = PscKonvertor()
+                for row in reader:
+                    zip_code = _unify_zip_code(row[params[KEY_COLUMN_ZIP]])
+
+                    county = None
+                    district = None
+
+                    if zip_code:
+                        try:
+                            district = zip_convertor.psc2okres(zip_code)
+                            county = zip_convertor.psc2kraj(zip_code)
+                        except:
+                            logging.warning("ZIP Code '%s' was not found in database" % (zip_code))
+
+                    if params.get(KEY_COLUMN_COUNTY, None) is not None:
+                        row[params[KEY_COLUMN_COUNTY]] = county
+                    if params.get(KEY_COLUMN_DISTRICT, None) is not None:
+                        row[params[KEY_COLUMN_DISTRICT]] = district
+
+                    writer.writerow(row)
+
 if __name__ == "__main__":
     try:
         comp = Component()
-        # this triggers the run method by default and is controlled by the configuration.action parameter
         comp.execute_action()
     except UserException as exc:
         logging.exception(exc)
