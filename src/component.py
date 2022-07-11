@@ -78,9 +78,9 @@ class Component(ComponentBase):
                         except KeyError:
                             logging.warning("ZIP Code '%s' was not found in database" % (zip_code))
 
-                    if params.get(KEY_COLUMN_COUNTY, None) is not None:
+                    if params.get(KEY_COLUMN_COUNTY, '') != '':
                         row[params[KEY_COLUMN_COUNTY]] = county
-                    if params.get(KEY_COLUMN_DISTRICT, None) is not None:
+                    if params.get(KEY_COLUMN_DISTRICT, '') != '':
                         row[params[KEY_COLUMN_DISTRICT]] = district
 
                     writer.writerow(row)
