@@ -7,15 +7,18 @@
   "properties": {
     "column_psc": {
       "type": "string",
-      "title": "Name of existing column with ZIP/PSČ"
+      "title": "Name of existing column with ZIP/PSČ",
+      "propertyOrder": 1
     },
     "column_district": {
       "type": "string",
-      "title": "Name of new column with District"
+      "title": "Name of new column with District",
+      "propertyOrder": 2
     },
     "column_county": {
       "type": "string",
-      "title": "Name of new column with County"
+      "title": "Name of new column with County",
+      "propertyOrder": 3
     }
   }
 }
