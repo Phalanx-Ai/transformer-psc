@@ -75,6 +75,7 @@ class Component(ComponentBase):
                         try:
                             district = zip_convertor.psc2okres(zip_code)
                             county = zip_convertor.psc2kraj(zip_code)
+                            logging.warning("ZIP Code '%s' was found in database" % (zip_code))
                         except KeyError:
                             logging.warning("ZIP Code '%s' was not found in database" % (zip_code))
 
